@@ -17,7 +17,6 @@ train_lr_model <- function(data, labels) {
   # optimizing classifiers coeffs
   for (digit_idx in 1:10) {
     cat(sprintf("\n-- training binary classifier for %d digit --\n", digit_idx - 1))
-    # initializing the classifier weight with zeros
     weights <- matrix(0, nrow = features_count, ncol = 1)
     # preparing labels for binary classification: 1 for match, 0 for other digit
     gt <- (labels == (digit_idx - 1)) * 1
@@ -30,7 +29,7 @@ train_lr_model <- function(data, labels) {
                regularization_rate * sum(weights ^ 2)
       false_negative <- sum((gt == 1) & (pred < 0.5 + 1e-6))
       false_positive <- sum((gt == 0) & (pred > 0.5 - 1e-6))
-      cat(sprintf("%03d> raw error: %10.9f [positive class: %5d/%d, negative class: %5d/%d]\n",
+      cat(sprintf("%03d> raw error: %12.1f [positive class: %5d/%d, negative class: %5d/%d]\n",
                   iter_counter, error, false_negative, sum(gt), false_positive, sum(1 - gt)))
       if (abs(error - prev_error) < target_error_diff) {
         classifier[, digit_idx] <- weights
@@ -47,14 +46,20 @@ train_lr_model <- function(data, labels) {
 }
 
 test_lr_model <- function(classifier, data) {
-  # return predicted labels column-matrix
-  data <- cbind(1, data)
-  predicted_probabilities <- sigmoid(data %*% classifier)
+  # The function returns predicted digits labels for given classifier and features data
+  predicted_probabilities <- lr_predict_probabilities(classifier, data)
   predicted_labels <- matrix(0, nrow = nrow(data), ncol = 1)
   for (sample_idx in 1:nrow(predicted_probabilities)) {
+    # selecting the most confident binary classifier
     predicted_labels[sample_idx] <- which.max(predicted_probabilities[sample_idx,])
   }
+  # shifting since indices start from 1, not 0
   return(predicted_labels - 1)
+}
+
+lr_predict_probabilities <- function(classifier, data) {
+  data <- cbind(1, data)
+  return(sigmoid(data %*% classifier))
 }
 
 sigmoid <- function(x) {
