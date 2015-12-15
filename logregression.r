@@ -26,7 +26,7 @@ train_lr_model <- function(data, labels) {
     while (TRUE) {
       pred <- sigmoid(data %*% weights)
       error <- sum(-gt * log(pred + 1e-12) - (1 - gt) * log(1 + 1e-12 - pred)) / samples_count +
-               regularization_rate * sum(weights ^ 2)
+               regularization_rate * sum(weights[-1] ^ 2)
       false_negative <- sum((gt == 1) & (pred < 0.5 + 1e-6))
       false_positive <- sum((gt == 0) & (pred > 0.5 - 1e-6))
       cat(sprintf("%03d> raw error: %12.1f [positive class: %5d/%d, negative class: %5d/%d]\n",
@@ -36,7 +36,8 @@ train_lr_model <- function(data, labels) {
         break
       }
       prev_error <- error
-      grad <- (t(data) %*% (pred - gt)) / samples_count + 2 * regularization_rate * weights
+      grad <- (t(data) %*% (pred - gt)) / samples_count
+      grad[-1] <- grad[-1] + 2 * regularization_rate * weights[-1]
       weights <- weights - learning_rate * grad
       learning_rate <- 0.9 * learning_rate
       iter_counter <- iter_counter + 1
